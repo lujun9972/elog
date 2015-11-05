@@ -32,9 +32,18 @@
 (require 'cl)
 (require 'eieio)
 
+;; define log level
+(defconst elog-error 0)
+(defconst elog-info 5)
+(defconst elog-verbose 10)
+(defconst elog-debug 15)
+
 (defclass elog-object ()
-  ((level :initarg :level :initform nil)
-   ;; %I means identify,%T means timestamp,%L means level %M measn message
+  ((level :initarg :level :initform elog-info)
+   ;; %I means identify
+   ;; %T means timestamp
+   ;; %L means level
+   ;; %M measn message
    (fmt :initarg :fmt :initform "[%I][%T][%L]:%M"))) 
 
 (defmethod elog/insert-log ((log elog-object) format &rest objects)
@@ -113,12 +122,6 @@
   (let ((msg (concat  (apply #'format format objects) "\n"))
         (file (oref log :file)))
     (append-to-file msg nil file)))
-
-;; define log level
-(defconst elog-error 0)
-(defconst elog-info 5)
-(defconst elog-verbose 10)
-(defconst elog-debug 15)
 
 
 (provide 'elog)
