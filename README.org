@@ -1,0 +1,62 @@
+#+TITLE: elog
+#+AUTHOR: DarkSun
+#+CATEGORY: elog
+#+DATE: [2015-11-06 五 07:03]
+#+OPTIONS: ^:{}
+
+* What is elog
+elog is a simple logging library for elisp. It is extended from [[https://github.com/sigma/logito][logito
+
+* ]]How to use elog
+1. require the file
+   
+   #+BEGIN_SRC emacs-lisp
+     (require 'elog)
+   #+END_SRC
+
+2. use `elog/open-log' macro to generate your own logging function.
+   
+   #+BEGIN_SRC emacs-lisp
+     (elog/open-log TYPE IDENT &rest init-args)
+   #+END_SRC
+
+   This macro generate two functions: the `elog/IDENT-log' for logging job and the `elog/IDENT-close-log' for cleanning job.
+
+   `TYPE' specify which kind of elog-object is used. Now, elog support three types of elog-object:
+
+   + message :: use `message' function to do the logging job.
+
+   + buffer :: log item will be recoreded in a specify buffer.
+
+   + file :: log item will be recoreded in a specify buffer.
+             
+   `init-args' is used to initialize the elog-object.
+   
+   + :level :: specify the logging level. The default value is `elog-info'
+
+   + :fmt :: specify the logging format string. There are some %-sequences has a special meaning in it.
+             %I means the `IDENT' argument
+             %T means current time 
+             %L means level
+             %M measn message
+
+   + :buffer :: It only used when generate buffer type logging functions. It specify which buffer is used to record the logging item.
+
+   + :file :: It only used when generate file type logging functions. It specify which file is used to record the logging item.
+
+3. use `elog/IDENT-log' function to do the logging job.
+   
+   (elog/IDENT-log LEVEL FORMAT-STRING &rest OBJECTS)
+
+4. use `elog/IDENT-close-log' function to do the cleanning job if you wish.
+
+   (elog/IDENT-close-log)
+
+* How to extend elog
+Elog is extensible. You just need to define a new subclass of elog-object  three method:
+
++ elog/should-log-p :: this function is used to check if the log item should be recored
+
++ elog/insert-log :: this function is used to do the actual logging job
+
++ elog/close-log :: this function is used to do the cleanning job.
