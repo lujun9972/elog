@@ -5,9 +5,9 @@
 #+OPTIONS: ^:{}
 
 * What is elog
-elog is a simple logging library for elisp. It is extended from [[https://github.com/sigma/logito][logito
+elog is a simple logging library for elisp. It is extended from [[https://github.com/sigma/logito][logito]]
 
-* ]]How to use elog
+* How to use elog
 1. require the file
    
    #+BEGIN_SRC emacs-lisp
