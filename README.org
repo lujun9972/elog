@@ -28,7 +28,7 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
    + buffer :: log item will be recoreded in a specify buffer.
 
-   + file :: log item will be recoreded in a specify buffer.
+   + file :: log item will be recoreded in a specify file.
              
    `init-args' is used to initialize the elog-object.
    
