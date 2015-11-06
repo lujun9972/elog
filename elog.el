@@ -43,7 +43,8 @@
    ;; %I means identify
    ;; %T means timestamp
    ;; %L means level
-   ;; %M measn message
+   ;; %P means pid
+   ;; %M means message
    (fmt :initarg :fmt :initform "[%I][%T][%L]:%M"))) 
 
 (defmethod elog/insert-log ((log elog-object) format &rest objects)
@@ -60,6 +61,7 @@
       (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt))
       (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt))
       (setq fmt (replace-regexp-in-string "%L" (format "%s" level) fmt))
+      (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt))
       (setq fmt (replace-regexp-in-string "%M" string fmt))
       (apply 'elog/insert-log log fmt objects))))
 
