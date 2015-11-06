@@ -33,10 +33,14 @@
 (require 'eieio)
 
 ;; define log level
-(defconst elog-error 0)
-(defconst elog-info 5)
-(defconst elog-verbose 10)
-(defconst elog-debug 15)
+(defconst elog-emerg 0)
+(defconst elog-alert 1)
+(defconst elog-critical 2)
+(defconst elog-error 3)
+(defconst elog-warn 4)
+(defconst elog-notice 5)
+(defconst elog-info 6)
+(defconst elog-debug 7)
 
 (defclass elog-object ()
   ((level :initarg :level :initform elog-info)
