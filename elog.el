@@ -150,9 +150,19 @@
 (defconst elog-local7 23)
 
 (defclass elog-syslog-object (elog-object)
-  ((conn :initarg :conn)
+  ((host :initarg :host)
+   (port :initarg :port)
+   (conn :initarg :conn)
    (facility :initarg :facility)
    (fmt :initarg :fmt :initform "%M")))
+
+(defmethod initialize-instance :after ((log elog-syslog-object) &rest args)
+  (let ((host (oref log :host))
+        (port (oref log :port)))
+    (setf (oref log :conn) (make-network-process :name (format "%s-%d" host port)
+                                                 :type 'datagram
+                                                 :host host
+                                                 :service port))))
 
 (defmethod elog/should-log-p ((log elog-syslog-object) serverity)
   (let ((conn (oref log :conn)))
