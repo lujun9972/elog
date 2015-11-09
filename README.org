@@ -44,11 +44,19 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
    + the elog-buffer-object  
 
-     - :buffer :: It only used when generate buffer type logging functions. It specify which buffer is used to record the logging item.
+     - :buffer :: It specify which buffer is used to record the logging item.
 
    + the elog-file-object
 
-     - :file :: It only used when generate file type logging functions. It specify which file is used to record the logging item.
+     - :file :: It specify which file is used to record the logging item.
+
+   + the elog-syslog-object
+
+     - :host :: It specify the syslogd server host
+
+     - :port :: It specify the syslogd service port
+
+     - :facility :: It specify the facility
 
 3. use `IDENT-log' function to do the logging job.
    
