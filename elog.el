@@ -51,68 +51,68 @@
    ;; %M means message
    (fmt :initarg :fmt :initform "[%I][%T][%L]:%M")))
 
-(defmethod elog/insert-log ((log elog-object) serverity format &rest objects)
+(defmethod elog-insert-log ((log elog-object) serverity format &rest objects)
   "Base implementation, do nothing")
 
-(defmethod elog/should-log-p ((log elog-object) serverity)
+(defmethod elog-should-log-p ((log elog-object) serverity)
   (let ((l (oref log :serverity)))
     (and (integerp l)
          (<= serverity l))))
 
-(defmethod elog/log ((log elog-object) serverity ident string &rest objects)
-  (when (elog/should-log-p log serverity)
+(defmethod elog-log ((log elog-object) serverity ident string &rest objects)
+  (when (elog-should-log-p log serverity)
     (let ((fmt (oref log :fmt)))
       (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt t))
       (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt t))
       (setq fmt (replace-regexp-in-string "%L" (format "%s" serverity) fmt t))
       (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt t))
       (setq fmt (replace-regexp-in-string "%M" string fmt t))
-      (apply 'elog/insert-log log serverity fmt objects))))
+      (apply 'elog-insert-log log serverity fmt objects))))
 
-;; (defmethod elog/log (log serverity ident string &rest objects)
+;; (defmethod elog-log (log serverity ident string &rest objects)
 ;;   "Fallback implementation, do nothing. This allows in particular
 ;;   to pass nil as the log object."
 ;;   nil)
 
-(defmacro elog/open-log (type ident &rest init-args)
+(defmacro elog-open-log (type ident &rest init-args)
   ""
   (declare (indent 'defun))
   (let ((log-obj (gensym))
         (log-type (intern (format "elog-%s-object" type)))
-        (log-func (intern (format "elog/%s-log" ident)))
-        (log-close-func (intern (format "elog/%s-close-log" ident))))
+        (log-func (intern (format "%s-log" ident)))
+        (log-close-func (intern (format "%s-close-log" ident))))
     `(progn
        (defconst ,log-obj (make-instance ',log-type ,@init-args))
        (defun ,log-func (serverity format-string &rest objects)
-         (apply #'elog/log ,log-obj serverity ',ident format-string objects))
+         (apply #'elog-log ,log-obj serverity ',ident format-string objects))
        (defun ,log-close-func ()
-         (elog/close-log ,log-obj)))))
+         (elog-close-log ,log-obj)))))
 
-(defmethod elog/close-log ((log elog-object))
+(defmethod elog-close-log ((log elog-object))
   "Base implementation, do nothing")
 
 ;; log for message
 (defclass elog-message-object (elog-object)
   ())
 
-(defmethod elog/insert-log ((log elog-message-object) serverity format &rest objects)
+(defmethod elog-insert-log ((log elog-message-object) serverity format &rest objects)
   (apply 'message format objects))
 
 ;; log for buffer
 (defclass elog-buffer-object (elog-object)
   ((buffer :initarg :buffer :initform nil)))
 
-(defmethod elog/should-log-p ((log elog-buffer-object) serverity)
+(defmethod elog-should-log-p ((log elog-buffer-object) serverity)
   (and (oref log :buffer)
        (call-next-method)))
 
-(defmethod elog/insert-log ((log elog-buffer-object) serverity format &rest objects)
+(defmethod elog-insert-log ((log elog-buffer-object) serverity format &rest objects)
   (let ((buffer (get-buffer-create (oref log :buffer))))
     (with-current-buffer buffer
       (goto-char (point-max))
       (insert (apply 'format format objects) "\n"))))
 
-(defmethod elog/close-log ((log elog-buffer-object))
+(defmethod elog-close-log ((log elog-buffer-object))
   (when (buffer-live-p (get-buffer (oref log :buffer)))
     (kill-buffer (oref log :buffer))))
 
@@ -120,11 +120,11 @@
 (defclass elog-file-object (elog-object)
   ((file :initarg :file :initform nil)))
 
-(defmethod elog/should-log-p ((log elog-file-object) serverity)
+(defmethod elog-should-log-p ((log elog-file-object) serverity)
   (and (oref log :file)
        (call-next-method)))
 
-(defmethod elog/insert-log ((log elog-file-object) serverity format &rest objects)
+(defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
   (let ((msg (concat  (apply #'format format objects) "\n"))
         (file (oref log :file)))
     (append-to-file msg nil file)))
@@ -164,26 +164,30 @@
                                                  :host host
                                                  :service port))))
 
-(defmethod elog/should-log-p ((log elog-syslog-object) serverity)
+(defmethod elog-should-log-p ((log elog-syslog-object) serverity)
   (let ((conn (oref log :conn)))
     (and (processp conn)
          (eq 'open (process-status conn))
          (call-next-method))))
 
-(defmethod elog/insert-log ((log elog-syslog-object) serverity format &rest objects)
+(defmethod elog-insert-log ((log elog-syslog-object) serverity format &rest objects)
   (let* ((conn (oref log :conn))
+         ;; create pri
          (facility (oref log :facility))
          (pri (format "<%d>" (+ (* 8 facility) serverity)))
+         ;; create header
          (timestamp (substring  (current-time-string) 4 19))
          (host (format-network-address (process-contact conn :local) t))
          (header (format "%s %s" timestamp host))
+         ;; create msg
          (tag "")
          (content (concat  (apply #'format format objects) "\n"))
          (msg (format "%s:%s" tag content))
+         ;; combine to a whole package
          (package (format  "%s%s %s" pri header msg)))
     (process-send-string conn package)))
 
-(defmethod elog/close-log ((log elog-syslog-object))
+(defmethod elog-close-log ((log elog-syslog-object))
   (when (processp (oref log :conn))
     (delete-process (oref log :conn))))
 
