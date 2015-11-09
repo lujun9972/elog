@@ -56,7 +56,6 @@
 
 (defmethod elog/should-log-p ((log elog-object) level)
   (let ((l (oref log :level)))
-    (message "l:%s,level %s" l level)
     (and (integerp l)
          (<= level l))))
 
@@ -152,7 +151,8 @@
 
 (defclass elog-syslog-object (elog-object)
   ((conn :initarg :conn)
-   (facility :initarg :facility)))
+   (facility :initarg :facility)
+   (fmt :initarg :fmt :initform "%M")))
 
 (defmethod elog/should-log-p ((log elog-syslog-object) level)
   (let ((conn (oref log :conn)))
