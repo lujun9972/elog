@@ -66,6 +66,39 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
    (IDENT-close-log)
 
+** Examples
+
+*** use message function to display log
+#+BEGIN_SRC emacs-lisp
+  (elog-open-log message "MSG")
+
+  (MSG-log elog-error "%s-%d" "hello" 123)
+#+END_SRC
+
+*** record log to a buffer
+#+BEGIN_SRC emacs-lisp
+  (elog-open-log buffer "BUF" :buffer "elog")
+
+  (BUF-log elog-error "%s-%d" "hello" 123)
+
+  (BUF-close-log)
+#+END_SRC
+
+*** record log to a file
+#+BEGIN_SRC emacs-lisp
+  (elog-open-log file "FILE" :file "/tmp/elog.log")
+
+  (FILE-log elog-error "%s-%d" "hello" 123)
+#+END_SRC
+
+*** record log to syslog
+#+BEGIN_SRC emacs-lisp
+  (elog-open-log syslog "SYSLOG" :host "10.8.208.121" :port 514 :facility elog-local7)
+
+  (SYSLOG-log elog-error "%s-%d" "hello" 123)
+
+  (SYSLOG-close-log)
+#+END_SRC
 * How to extend elog
 Elog is extensible. You just need to define a new subclass of elog-object  three method:
 
