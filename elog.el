@@ -32,7 +32,7 @@
 (require 'cl)
 (require 'eieio)
 
-;; define log level
+;; define log serverity
 (defconst elog-emerg 0)
 (defconst elog-alert 1)
 (defconst elog-critical 2)
