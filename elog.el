@@ -43,19 +43,20 @@
 (defconst elog-debug 7)
 
 (defclass elog-object ()
-  ((level :initarg :level :initform elog-info)
+  ((level :initarg :level :initform 6)
    ;; %I means identify
    ;; %T means timestamp
    ;; %L means level
    ;; %P means pid
    ;; %M means message
-   (fmt :initarg :fmt :initform "[%I][%T][%L]:%M"))) 
+   (fmt :initarg :fmt :initform "[%I][%T][%L]:%M")))
 
-(defmethod elog/insert-log ((log elog-object) format &rest objects)
+(defmethod elog/insert-log ((log elog-object) serverity format &rest objects)
   "Base implementation, do nothing")
 
 (defmethod elog/should-log-p ((log elog-object) level)
   (let ((l (oref log :level)))
+    (message "l:%s,level %s" l level)
     (and (integerp l)
          (<= level l))))
 
@@ -67,7 +68,7 @@
       (setq fmt (replace-regexp-in-string "%L" (format "%s" level) fmt))
       (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt))
       (setq fmt (replace-regexp-in-string "%M" string fmt))
-      (apply 'elog/insert-log log fmt objects))))
+      (apply 'elog/insert-log log level fmt objects))))
 
 ;; (defmethod elog/log (log level ident string &rest objects)
 ;;   "Fallback implementation, do nothing. This allows in particular
@@ -95,7 +96,7 @@
 (defclass elog-message-object (elog-object)
   ())
 
-(defmethod elog/insert-log ((log elog-message-object) format &rest objects)
+(defmethod elog/insert-log ((log elog-message-object) serverity format &rest objects)
   (apply 'message format objects))
 
 ;; log for buffer
@@ -106,7 +107,7 @@
   (and (oref log :buffer)
        (call-next-method)))
 
-(defmethod elog/insert-log ((log elog-buffer-object) format &rest objects)
+(defmethod elog/insert-log ((log elog-buffer-object) serverity format &rest objects)
   (let ((buffer (get-buffer-create (oref log :buffer))))
     (with-current-buffer buffer
       (goto-char (point-max))
@@ -124,11 +125,58 @@
   (and (oref log :file)
        (call-next-method)))
 
-(defmethod elog/insert-log ((log elog-file-object) format &rest objects)
+(defmethod elog/insert-log ((log elog-file-object) serverity format &rest objects)
   (let ((msg (concat  (apply #'format format objects) "\n"))
         (file (oref log :file)))
     (append-to-file msg nil file)))
 
+;; log for syslogd
+;; define syslog facility
+(defconst elog-kern 0)
+(defconst elog-user 1)
+(defconst elog-mail 2)
+(defconst elog-auth 4)
+(defconst elog-daemon 3)
+(defconst elog-lpr 6)
+(defconst elog-news 7)
+(defconst elog-uucp 8)
+(defconst elog-cron 9)
+(defconst elog-local0 16)
+(defconst elog-local1 17)
+(defconst elog-local2 18)
+(defconst elog-local3 19)
+(defconst elog-local4 20)
+(defconst elog-local5 21)
+(defconst elog-local6 22)
+(defconst elog-local7 23)
+
+(defclass elog-syslog-object (elog-object)
+  ((conn :initarg :conn)
+   (facility :initarg :facility)))
+
+(defmethod elog/should-log-p ((log elog-syslog-object) level)
+  (let ((conn (oref log :conn)))
+    (and (processp conn)
+         (eq 'open (process-status conn))
+         (call-next-method))))
+
+(defmethod elog/insert-log ((log elog-syslog-object) serverity format &rest objects)
+  (let* ((conn (oref log :conn))
+         (facility (oref log :facility))
+         (pri (format "<%d>" (+ (* 8 facility) serverity)))
+         (timestamp (substring  (current-time-string) 4 19))
+         (host (format-network-address (process-contact conn :local) t))
+         (header (format "%s %s" timestamp host))
+         (tag "")
+         (content (concat  (apply #'format format objects) "\n"))
+         (msg (format "%s:%s" tag content))
+         (package (format  "%s%s %s" pri header msg)))
+    (process-send-string conn package)))
+
+(defmethod elog/close-log ((log elog-syslog-object))
+  (when (processp (oref log :conn))
+    (delete-process (oref log :conn))))
 
 (provide 'elog)
+
 ;;; elog.el ends here
