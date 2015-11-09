@@ -40,7 +40,7 @@ elog is a simple logging library for elisp. It is extended from [[https://github
              %I means the `IDENT' argument
              %T means current time 
              %L means level
-             %M measn message
+             %M means message
 
    + the elog-buffer-object  
 
@@ -102,7 +102,7 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 * How to extend elog
 Elog is extensible. You just need to define a new subclass of elog-object  three method:
 
-+ elog-should-log-p :: this function is used to check if the log item should be recored
++ elog-should-log-p :: this function is used to check if the log item should be recorded
 
 + elog-insert-log :: this function is used to do the actual logging job
 
