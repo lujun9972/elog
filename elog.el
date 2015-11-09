@@ -43,10 +43,10 @@
 (defconst elog-debug 7)
 
 (defclass elog-object ()
-  ((level :initarg :level :initform 6)
+  ((serverity :initarg :serverity :initform 6)
    ;; %I means identify
    ;; %T means timestamp
-   ;; %L means level
+   ;; %L means serverity
    ;; %P means pid
    ;; %M means message
    (fmt :initarg :fmt :initform "[%I][%T][%L]:%M")))
@@ -54,22 +54,22 @@
 (defmethod elog/insert-log ((log elog-object) serverity format &rest objects)
   "Base implementation, do nothing")
 
-(defmethod elog/should-log-p ((log elog-object) level)
-  (let ((l (oref log :level)))
+(defmethod elog/should-log-p ((log elog-object) serverity)
+  (let ((l (oref log :serverity)))
     (and (integerp l)
-         (<= level l))))
+         (<= serverity l))))
 
-(defmethod elog/log ((log elog-object) level ident string &rest objects)
-  (when (elog/should-log-p log level)
+(defmethod elog/log ((log elog-object) serverity ident string &rest objects)
+  (when (elog/should-log-p log serverity)
     (let ((fmt (oref log :fmt)))
-      (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt))
-      (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt))
-      (setq fmt (replace-regexp-in-string "%L" (format "%s" level) fmt))
-      (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt))
-      (setq fmt (replace-regexp-in-string "%M" string fmt))
-      (apply 'elog/insert-log log level fmt objects))))
+      (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt t))
+      (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt t))
+      (setq fmt (replace-regexp-in-string "%L" (format "%s" serverity) fmt t))
+      (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt t))
+      (setq fmt (replace-regexp-in-string "%M" string fmt t))
+      (apply 'elog/insert-log log serverity fmt objects))))
 
-;; (defmethod elog/log (log level ident string &rest objects)
+;; (defmethod elog/log (log serverity ident string &rest objects)
 ;;   "Fallback implementation, do nothing. This allows in particular
 ;;   to pass nil as the log object."
 ;;   nil)
@@ -83,8 +83,8 @@
         (log-close-func (intern (format "elog/%s-close-log" ident))))
     `(progn
        (defconst ,log-obj (make-instance ',log-type ,@init-args))
-       (defun ,log-func (level format-string &rest objects)
-         (apply #'elog/log ,log-obj level ',ident format-string objects))
+       (defun ,log-func (serverity format-string &rest objects)
+         (apply #'elog/log ,log-obj serverity ',ident format-string objects))
        (defun ,log-close-func ()
          (elog/close-log ,log-obj)))))
 
@@ -102,7 +102,7 @@
 (defclass elog-buffer-object (elog-object)
   ((buffer :initarg :buffer :initform nil)))
 
-(defmethod elog/should-log-p ((log elog-buffer-object) level)
+(defmethod elog/should-log-p ((log elog-buffer-object) serverity)
   (and (oref log :buffer)
        (call-next-method)))
 
@@ -120,7 +120,7 @@
 (defclass elog-file-object (elog-object)
   ((file :initarg :file :initform nil)))
 
-(defmethod elog/should-log-p ((log elog-file-object) level)
+(defmethod elog/should-log-p ((log elog-file-object) serverity)
   (and (oref log :file)
        (call-next-method)))
 
@@ -154,7 +154,7 @@
    (facility :initarg :facility)
    (fmt :initarg :fmt :initform "%M")))
 
-(defmethod elog/should-log-p ((log elog-syslog-object) level)
+(defmethod elog/should-log-p ((log elog-syslog-object) serverity)
   (let ((conn (oref log :conn)))
     (and (processp conn)
          (eq 'open (process-status conn))
