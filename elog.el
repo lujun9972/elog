@@ -164,25 +164,31 @@
 (defconst elog-local7 23)
 
 (defclass elog-syslog-object (elog-object)
-  ((host :initarg :host
-         :type string
-         :custom string)
-   (port :initarg :port
-         :type number
-         :custom number)
-   (facility :initarg :facility
+  ((facility :initarg :facility
              :type number
              :custom number)
    (conn :initarg :conn)
    (fmt :initarg :fmt :initform "%M")))
 
-(defmethod initialize-instance :after ((log elog-syslog-object) &rest args)
-  (let ((host (oref log :host))
-        (port (oref log :port)))
-    (setf (oref log :conn) (make-network-process :name (format "%s-%d" host port)
-                                                 :type 'datagram
-                                                 :host host
-                                                 :service port))))
+(defun elog--plist-remove (plist prop)
+  (when plist
+    (let ((key (car plist))
+          (value (cadr plist))
+          (rest (cddr plist)))
+      (cond ((equal prop key)
+             rest)
+            (t (append (list key value) (elog--plist-remove rest prop)))))))
+
+(defmethod initialize-instance ((log elog-syslog-object) args)
+  (let* ((host (plist-get args :host))
+         (port (plist-get args :port))
+         (conn (make-network-process :name (format "%s-%d" host port)
+                                     :type 'datagram
+                                     :host host
+                                     :service port))
+         (rest-args (elog--plist-remove (elog--plist-remove args :host) :port))
+         (slots (append (list :conn conn) rest-args)))
+    (funcall #'call-next-method log slots)))
 
 (defmethod elog-should-log-p ((log elog-syslog-object) serverity)
   (let ((conn (oref log :conn)))
