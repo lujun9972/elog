@@ -43,13 +43,21 @@
 (defconst elog-debug 7)
 
 (defclass elog-object ()
-  ((serverity :initarg :serverity :initform 6)
+  ((serverity :initarg :serverity
+              :type number
+              :custom number
+              :initform 6)
    ;; %I means identify
    ;; %T means timestamp
    ;; %L means serverity
    ;; %P means pid
    ;; %M means message
-   (fmt :initarg :fmt :initform "[%I][%T][%L]:%M")))
+   (fmt :initarg :fmt
+        :type string
+        :custom string
+        :initform "[%I][%T][%L]:%M"))
+  "An interface to special elog-object"
+  :abstract t)
 
 (defmethod elog-insert-log ((log elog-object) serverity format &rest objects)
   "Base implementation, do nothing")
@@ -100,7 +108,10 @@
 
 ;; log for buffer
 (defclass elog-buffer-object (elog-object)
-  ((buffer :initarg :buffer :initform nil)))
+  ((buffer :initarg :buffer
+           :type (or null string)
+           :custom string
+           :initform nil)))
 
 (defmethod elog-should-log-p ((log elog-buffer-object) serverity)
   (and (oref log :buffer)
@@ -118,7 +129,10 @@
 
 ;; log for file
 (defclass elog-file-object (elog-object)
-  ((file :initarg :file :initform nil)))
+  ((file :initarg :file
+         :type (or null string)
+         :custom string
+         :initform nil)))
 
 (defmethod elog-should-log-p ((log elog-file-object) serverity)
   (and (oref log :file)
@@ -150,10 +164,16 @@
 (defconst elog-local7 23)
 
 (defclass elog-syslog-object (elog-object)
-  ((host :initarg :host)
-   (port :initarg :port)
+  ((host :initarg :host
+         :type string
+         :custom string)
+   (port :initarg :port
+         :type number
+         :custom number)
+   (facility :initarg :facility
+             :type number
+             :custom number)
    (conn :initarg :conn)
-   (facility :initarg :facility)
    (fmt :initarg :fmt :initform "%M")))
 
 (defmethod initialize-instance :after ((log elog-syslog-object) &rest args)
