@@ -179,7 +179,7 @@
              rest)
             (t (append (list key value) (elog--plist-remove rest prop)))))))
 
-(defmethod initialize-instance ((log elog-syslog-object) args)
+(defmethod initialize-instance ((log elog-syslog-object) &optional args)
   (let* ((host (plist-get args :host))
          (port (plist-get args :port))
          (conn (make-network-process :name (format "%s-%d" host port)
