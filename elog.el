@@ -1,9 +1,9 @@
-;;; elog.el --- logging library
+;;; elog.el --- logging library extended from logito
 
 ;; Copyright (C) 2015  DarkSun
 
 ;; Author: DarkSun <lujun9972@gmail.com>
-;; Keywords: lisp, tool
+;; Keywords: lisp, tool, log
 ;; Package-Version: 20151102.1255
 ;; Version: 0.1
 ;; Package-Requires: ((eieio "1.3"))
