@@ -36,7 +36,7 @@ elog is a simple logging library for elisp. It is extended from [[https://github
    
    + the base elog-object
      
-     - :level :: specify the logging level. The default value is `elog-info'
+     - :serverity :: specify the logging level. The default value is `elog-info'
 
      - :fmt :: specify the logging format string. There are some %-sequences has a special meaning in it.
              %I means the `IDENT' argument

@@ -52,6 +52,7 @@
 
 (defclass elog-object ()
   ((serverity :initarg :serverity
+              :documentation "specify the logging level"
               :type number
               :custom number
               :initform 6)
@@ -61,6 +62,7 @@
    ;; %P means pid
    ;; %M means message
    (fmt :initarg :fmt
+        :documentation "specify the logging format"
         :type string
         :custom string
         :initform "[%I][%T][%L]:%M"))
@@ -98,7 +100,8 @@
 (defmacro elog-open-log (type ident &rest init-args)
   "Create the logging functions.
 `TYPE' specify which kind of elog-object is used. Now, elog support four types of elog-object: `message',`buffer',`file' and `syslog'.
-It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-close-log' used to do the cleanning job"
+It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-close-log' used to do the cleanning job
+`INIT-ARGS' is used to construct the elog-object"
   (declare (indent 'defun))
   (let ((log-obj (gensym))
         (log-type (intern (format "elog-%s-object" type)))
@@ -123,6 +126,7 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 ;; log for buffer
 (defclass elog-buffer-object (elog-object)
   ((buffer :initarg :buffer
+           :documentation "specify which buffer is used to record the logging item."
            :type (or null string)
            :custom string
            :initform nil)))
@@ -144,6 +148,7 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 ;; log for file
 (defclass elog-file-object (elog-object)
   ((file :initarg :file
+         :documentation "specify which file is used to record the logging item"
          :type (or null string)
          :custom string
          :initform nil)))
@@ -196,9 +201,11 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 
 (defclass elog-syslog-object (elog-object)
   ((facility :initarg :facility
+             :documentation "specify the facility"
              :type number
              :custom number)
-   (conn :initarg :conn)
+   (conn :initarg :conn
+         :documentation "the network process that send logging item to the syslogd server")
    (fmt :initarg :fmt :initform "%M")))
 
 (defun elog--plist-remove (plist prop)
