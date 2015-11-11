@@ -22,13 +22,15 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
    This macro generate two functions: the `elog-IDENT-log' for logging job and the `elog-IDENT-close-log' for cleanning job.
 
-   `TYPE' specify which kind of elog-object is used. Now, elog support three types of elog-object:
+   `TYPE' specify which kind of elog-object is used. Now, elog support four types of elog-object:
 
    + message :: use `message' function to do the logging job.
 
    + buffer :: log item will be recoreded in a specify buffer.
 
    + file :: log item will be recoreded in a specify file.
+
+   + syslog :: log item will be send to a syslogd server.
              
    `init-args' is used to initialize the elog-object.
    
