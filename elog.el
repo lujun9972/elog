@@ -1,4 +1,4 @@
-;;; elog.el --- logging library for Emacs
+;;; elog.el --- logging library
 
 ;; Copyright (C) 2015  DarkSun
 
@@ -33,14 +33,22 @@
 (require 'eieio)
 
 ;; define log serverity
-(defconst elog-emerg 0)
-(defconst elog-alert 1)
-(defconst elog-critical 2)
-(defconst elog-error 3)
-(defconst elog-warn 4)
-(defconst elog-notice 5)
-(defconst elog-info 6)
-(defconst elog-debug 7)
+(defconst elog-emerg 0
+  "Emergency: system is unusable")
+(defconst elog-alert 1
+  "Alert: action must be taken immediately")
+(defconst elog-critical 2
+  "Critical: critical conditions")
+(defconst elog-error 3
+  "Error: error conditions")
+(defconst elog-warn 4
+  "Warning: warning conditions")
+(defconst elog-notice 5
+  "Notice: normal but significant condition")
+(defconst elog-info 6
+  "Informational: informational messages")
+(defconst elog-debug 7
+  "Debug: debug-level messages")
 
 (defclass elog-object ()
   ((serverity :initarg :serverity
@@ -60,14 +68,19 @@
   :abstract t)
 
 (defmethod elog-insert-log ((log elog-object) serverity format &rest objects)
-  "Base implementation, do nothing")
+  "do the actual logging job.")
 
 (defmethod elog-should-log-p ((log elog-object) serverity)
+  " check if the log item should be recorded."
   (let ((l (oref log :serverity)))
     (and (integerp l)
          (<= serverity l))))
 
+(defmethod elog-close-log ((log elog-object))
+  "do the cleanning job after log job is done")
+
 (defmethod elog-log ((log elog-object) serverity ident string &rest objects)
+  "do the log job if applicable"
   (when (elog-should-log-p log serverity)
     (let ((fmt (oref log :fmt)))
       (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt t))
@@ -83,7 +96,9 @@
 ;;   nil)
 
 (defmacro elog-open-log (type ident &rest init-args)
-  ""
+  "Create the logging functions.
+`TYPE' specify which kind of elog-object is used. Now, elog support four types of elog-object: `message',`buffer',`file' and `syslog'.
+It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-close-log' used to do the cleanning job"
   (declare (indent 'defun))
   (let ((log-obj (gensym))
         (log-type (intern (format "elog-%s-object" type)))
@@ -92,12 +107,11 @@
     `(progn
        (defconst ,log-obj (make-instance ',log-type ,@init-args))
        (defun ,log-func (serverity format-string &rest objects)
+         "use this function to log stuff"
          (apply #'elog-log ,log-obj serverity ',ident format-string objects))
        (defun ,log-close-func ()
+         "use this function to do cleanning job after the log job is done"
          (elog-close-log ,log-obj)))))
-
-(defmethod elog-close-log ((log elog-object))
-  "Base implementation, do nothing")
 
 ;; log for message
 (defclass elog-message-object (elog-object)
@@ -145,23 +159,40 @@
 
 ;; log for syslogd
 ;; define syslog facility
-(defconst elog-kern 0)
-(defconst elog-user 1)
-(defconst elog-mail 2)
-(defconst elog-auth 4)
-(defconst elog-daemon 3)
-(defconst elog-lpr 6)
-(defconst elog-news 7)
-(defconst elog-uucp 8)
-(defconst elog-cron 9)
-(defconst elog-local0 16)
-(defconst elog-local1 17)
-(defconst elog-local2 18)
-(defconst elog-local3 19)
-(defconst elog-local4 20)
-(defconst elog-local5 21)
-(defconst elog-local6 22)
-(defconst elog-local7 23)
+(defconst elog-kern 0
+  "kernel messages")
+(defconst elog-user 1
+  "user-level messages")
+(defconst elog-mail 2
+  "mail system")
+(defconst elog-daemon 3
+  "system daemons")
+(defconst elog-auth 4
+  "security/authorization messages")
+(defconst elog-lpr 6
+  "line printer subsystem")
+(defconst elog-news 7
+  "network news subsystem")
+(defconst elog-uucp 8
+  "UUCP subsystem")
+(defconst elog-cron 9
+  "clock daemon")
+(defconst elog-local0 16
+  "local use 0")
+(defconst elog-local1 17
+  "local use 1")
+(defconst elog-local2 18
+  "local use 2")
+(defconst elog-local3 19
+  "local use 3")
+(defconst elog-local4 20
+  "local use 4")
+(defconst elog-local5 21
+  "local use 5")
+(defconst elog-local6 22
+  "local use 6")
+(defconst elog-local7 23
+  "local use 7")
 
 (defclass elog-syslog-object (elog-object)
   ((facility :initarg :facility
