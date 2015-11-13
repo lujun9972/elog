@@ -152,6 +152,11 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          :type (or null string)
          :custom string
          :initform nil)
+   (modes :initarg :modes
+         :documentation "specify the modes of log file"
+         :type (or null number)
+         :custom (or null number)
+         :initform nil)
    (max-size :initarg :max-size
          :documentation "specify max size(bytes) of single log file."
          :type (or null number)
@@ -169,16 +174,24 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 
 (defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
   (let* ((msg (concat  (apply #'format format objects) "\n"))
-        (file (oref log :file))
-        (max-size (oref log :max-size))
-        (file-size (nth 7 (file-attributes file))))
+         (file (oref log :file)) 
+         (max-size (oref log :max-size))
+         (file-size (nth 7 (file-attributes file))))
+    ;; rotate the log file
     (when (and max-size
                (> file-size max-size))
       (let* ((old-dir (or (oref log :old-dir)
                           (file-name-directory file)))
              (old-file (expand-file-name  (format "%s-%s.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file)) old-dir)))
         (rename-file file old-file)))
-    (append-to-file msg nil file)))
+    ;; logging to the log file
+    (append-to-file msg nil file)
+    ;; change the log file's modes
+    (let* ((octal-to-decimal (lambda (x)
+                               (string-to-number (format "%d" x) 8)))
+           (modes (oref log :modes)))
+      (when modes
+        (set-file-modes file (funcall octal-to-decimal modes))))))
 
 ;; log for syslogd
 ;; define syslog facility
