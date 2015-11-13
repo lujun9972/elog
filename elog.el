@@ -65,7 +65,17 @@
         :documentation "specify the logging format"
         :type string
         :custom string
-        :initform "[%I][%T][%L]:%M"))
+        :initform "[%I][%T][%L]:%M")
+   (prelog-functions :initarg :prelog-functions
+                     :documentation "functions that executed before do the logging. The function should accept the only parameter:this elog-object self"
+                     :type list
+                     :custom list
+                     :initform nil)
+   (postlog-functions :initarg :postlog-functions
+                     :documentation "functions that executed after logging done. The function should accept the only parameter:this elog-object self"
+                     :type list
+                     :custom list
+                     :initform nil))
   "An interface to special elog-object"
   :abstract t)
 
@@ -84,13 +94,17 @@
 (defmethod elog-log ((log elog-object) serverity ident string &rest objects)
   "do the log job if applicable"
   (when (elog-should-log-p log serverity)
+    (mapc (lambda (func)
+            (funcall func log)) (oref log :prelog-functions))
     (let ((fmt (oref log :fmt)))
       (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt t))
       (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt t))
       (setq fmt (replace-regexp-in-string "%L" (format "%s" serverity) fmt t))
       (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt t))
       (setq fmt (replace-regexp-in-string "%M" string fmt t))
-      (apply 'elog-insert-log log serverity fmt objects))))
+      (apply 'elog-insert-log log serverity fmt objects))
+    (mapc (lambda (func)
+            (funcall func log)) (oref log :postlog-functions))))
 
 ;; (defmethod elog-log (log serverity ident string &rest objects)
 ;;   "Fallback implementation, do nothing. This allows in particular
