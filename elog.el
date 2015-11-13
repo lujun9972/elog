@@ -151,6 +151,11 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          :documentation "specify which file is used to record the logging item"
          :type (or null string)
          :custom string
+         :initform nil)
+   (max-size :initarg :max-size
+         :documentation "specify max size(kb) of single log file."
+         :type (or null number)
+         :custom (or null number)
          :initform nil)))
 
 (defmethod elog-should-log-p ((log elog-file-object) serverity)
@@ -158,8 +163,13 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
        (call-next-method)))
 
 (defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
-  (let ((msg (concat  (apply #'format format objects) "\n"))
-        (file (oref log :file)))
+  (let* ((msg (concat  (apply #'format format objects) "\n"))
+        (file (oref log :file))
+        (max-size (* 1024 (oref log :max-size)))
+        (file-size (nth 7 (file-attributes file))))
+    (when (and max-size
+               (> file-size max-size))
+      (rename-file file (format "%s-%.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file))))
     (append-to-file msg nil file)))
 
 ;; log for syslogd
