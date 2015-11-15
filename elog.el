@@ -65,7 +65,17 @@
         :documentation "specify the logging format"
         :type string
         :custom string
-        :initform "[%I][%T][%L]:%M"))
+        :initform "[%I][%T][%L]:%M")
+   (prelog-functions :initarg :prelog-functions
+                     :documentation "functions that executed before do the logging. The function should accept the only parameter:this elog-object self"
+                     :type list
+                     :custom list
+                     :initform nil)
+   (postlog-functions :initarg :postlog-functions
+                     :documentation "functions that executed after logging done. The function should accept the only parameter:this elog-object self"
+                     :type list
+                     :custom list
+                     :initform nil))
   "An interface to special elog-object"
   :abstract t)
 
@@ -84,13 +94,17 @@
 (defmethod elog-log ((log elog-object) serverity ident string &rest objects)
   "do the log job if applicable"
   (when (elog-should-log-p log serverity)
+    (mapc (lambda (func)
+            (funcall func log)) (oref log :prelog-functions))
     (let ((fmt (oref log :fmt)))
       (setq fmt (replace-regexp-in-string "%I" (format "%s" ident) fmt t))
       (setq fmt (replace-regexp-in-string "%T" (current-time-string) fmt t))
       (setq fmt (replace-regexp-in-string "%L" (format "%s" serverity) fmt t))
       (setq fmt (replace-regexp-in-string "%P" (format "%s" (emacs-pid)) fmt t))
       (setq fmt (replace-regexp-in-string "%M" string fmt t))
-      (apply 'elog-insert-log log serverity fmt objects))))
+      (apply 'elog-insert-log log serverity fmt objects))
+    (mapc (lambda (func)
+            (funcall func log)) (oref log :postlog-functions))))
 
 ;; (defmethod elog-log (log serverity ident string &rest objects)
 ;;   "Fallback implementation, do nothing. This allows in particular
@@ -151,6 +165,21 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          :documentation "specify which file is used to record the logging item"
          :type (or null string)
          :custom string
+         :initform nil)
+   (modes :initarg :modes
+         :documentation "specify the modes of log file"
+         :type (or null number)
+         :custom (or null number)
+         :initform nil)
+   (max-size :initarg :max-size
+         :documentation "specify max size(bytes) of single log file."
+         :type (or null number)
+         :custom (or null number)
+         :initform nil)
+   (old-dir :initarg :old-dir
+         :documentation "specify which directory the old log file will be located."
+         :type (or null string)
+         :custom (or null string)
          :initform nil)))
 
 (defmethod elog-should-log-p ((log elog-file-object) serverity)
@@ -158,9 +187,25 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
        (call-next-method)))
 
 (defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
-  (let ((msg (concat  (apply #'format format objects) "\n"))
-        (file (oref log :file)))
-    (append-to-file msg nil file)))
+  (let* ((msg (concat  (apply #'format format objects) "\n"))
+         (file (oref log :file)) 
+         (max-size (oref log :max-size))
+         (file-size (nth 7 (file-attributes file))))
+    ;; rotate the log file
+    (when (and max-size
+               (> file-size max-size))
+      (let* ((old-dir (or (oref log :old-dir)
+                          (file-name-directory file)))
+             (old-file (expand-file-name  (format "%s-%s.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file)) old-dir)))
+        (rename-file file old-file)))
+    ;; logging to the log file
+    (append-to-file msg nil file)
+    ;; change the log file's modes
+    (let* ((octal-to-decimal (lambda (x)
+                               (string-to-number (format "%d" x) 8)))
+           (modes (oref log :modes)))
+      (when modes
+        (set-file-modes file (funcall octal-to-decimal modes))))))
 
 ;; log for syslogd
 ;; define syslog facility

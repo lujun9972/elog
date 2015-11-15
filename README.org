@@ -72,7 +72,11 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
 *** use message function to display log
 #+BEGIN_SRC emacs-lisp
-  (elog-open-log message "MSG")
+
+  (elog-open-log message "MSG" :prelog-functions (list (lambda (log)
+                                                         (message "start to log at %s" (current-time-string))))
+                               :postlog-functions (list (lambda (log)
+                                                         (message "log done at %s" (current-time-string)))))
 
   (MSG-log elog-error "%s-%d" "hello" 123)
 #+END_SRC
@@ -88,9 +92,12 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
 *** record log to a file
 #+BEGIN_SRC emacs-lisp
-  (elog-open-log file "FILE" :file "/tmp/elog.log")
+  (elog-open-log file "FILE" :file "/tmp/elog.log"
+                             :modes 700
+                             :max-size 10
+                             :old-dir "/tmp/elog/")
 
-  (FILE-log elog-error "%s-%d" "hello" 123)
+   (FILE-log elog-error "%s-%d" "hello" 123)
 #+END_SRC
 
 *** record log to syslog
