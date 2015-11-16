@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; This module provides logging facility for Emacs
+;; This module provides logging facility for Elisp
 
 ;;; Code:
 
@@ -89,7 +89,7 @@
          (<= serverity l))))
 
 (defmethod elog-close-log ((log elog-object))
-  "do the cleanning job after log job is done")
+  "do the cleanning job after log job is done.")
 
 (defmethod elog-log ((log elog-object) serverity ident string &rest objects)
   "do the log job if applicable"
@@ -115,7 +115,7 @@
   "Create the logging functions.
 `TYPE' specify which kind of elog-object is used. Now, elog support four types of elog-object: `message',`buffer',`file' and `syslog'.
 It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-close-log' used to do the cleanning job
-`INIT-ARGS' is used to construct the elog-object"
+`INIT-ARGS' is used to construct the elog-object,every subclass of elog-object has their own init-args, so use descirbe-function to check the details"
   (declare (indent 'defun))
   (let ((log-obj (gensym))
         (log-type (intern (format "elog-%s-object" type)))
@@ -180,6 +180,11 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          :documentation "specify which directory the old log file will be located."
          :type (or null string)
          :custom (or null string)
+         :initform nil)
+   (compress-command :initarg :compress-command
+         :documentation "specify how to compress the old log file. %L will be replaced by the old log file."
+         :type (or null string)
+         :custom (or null string)
          :initform nil)))
 
 (defmethod elog-should-log-p ((log elog-file-object) serverity)
@@ -196,8 +201,13 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
                (> file-size max-size))
       (let* ((old-dir (or (oref log :old-dir)
                           (file-name-directory file)))
-             (old-file (expand-file-name  (format "%s-%s.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file)) old-dir)))
-        (rename-file file old-file)))
+             (old-file (expand-file-name  (format "%s-%s.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file)) old-dir))
+             (compress-command (and (oref log :compress-command)
+                                    (replace-regexp-in-string "%L" old-file (oref log :compress-command) t))))
+        (rename-file file old-file)
+        ;; compress the old log file
+        (when compress-command
+          (shell-command compress-command))))
     ;; logging to the log file
     (append-to-file msg nil file)
     ;; change the log file's modes
