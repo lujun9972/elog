@@ -100,7 +100,9 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
 *** record log to a file
 #+BEGIN_SRC emacs-lisp
-  (elog-open-log file "FILE" :file "/tmp/elog.log"
+  (defun elog-get-log-name ()
+    (format "/tmp/%s/elog.log" (format-time-string "%Y%m/%d")))
+  (elog-open-log file "FILE" :file 'elog-get-log-name
                              :modes 700
                              :max-size 10
                              :old-dir "/tmp/elog/"
@@ -108,7 +110,7 @@ elog is a simple logging library for elisp. It is extended from [[https://github
   (FILE-log-serverity)
   (FILE-set-log-serverity elog-emerg)
 
-   (FILE-log elog-error "%s-%d" "hello" 123) 
+   (FILE-log elog-error "%s-%d" "hello" 123)
 #+END_SRC
 
 *** record log to syslog

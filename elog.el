@@ -170,12 +170,12 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 ;; log for file
 (defclass elog-file-object (elog-object)
   ((file :initarg :file
-         :documentation "specify which file is used to record the logging item"
-         :type (or null string)
-         :custom string
+         :documentation "specify which file is used to record the logging item. If it's a string, the string will be the log file name. otherwise it should be a function symbol which generate the log file name"
+         :type (or null string symbol)
+         :custom (or string symbol)
          :initform nil)
    (modes :initarg :modes
-         :documentation "specify the modes of log file"
+         :documentation "specify the modes of log file."
          :type (or null number)
          :custom (or null number)
          :initform nil)
@@ -201,12 +201,16 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 
 (defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
   (let* ((msg (concat  (apply #'format format objects) "\n"))
-         (file (oref log :file)) 
+         (file-or-symbol (oref log :file)) 
+         (file (if (stringp file-or-symbol)
+                   file
+                 (funcall file-or-symbol)))
          (max-size (oref log :max-size))
-         (file-size (nth 7 (file-attributes file))))
+         (file-size (or (nth 7 (file-attributes file))
+                        0)))
     ;; rotate the log file
     (when (and max-size
-               (> file-size max-size))
+               (>= file-size max-size))
       (let* ((old-dir (or (oref log :old-dir)
                           (file-name-directory file)))
              (old-file (expand-file-name  (format "%s-%s.%s" (file-name-base file) (format-time-string "%FT%T") (file-name-extension file)) old-dir))
@@ -217,7 +221,10 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
         (when compress-command
           (shell-command compress-command))))
     ;; logging to the log file
-    (append-to-file msg nil file)
+    (let ((log-file-directory (file-name-directory file)))
+      (unless (file-exists-p log-file-directory)
+        (make-directory log-file-directory t))
+      (append-to-file msg nil file))
     ;; change the log file's modes
     (let* ((octal-to-decimal (lambda (x)
                                (string-to-number (format "%d" x) 8)))
