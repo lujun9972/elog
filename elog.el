@@ -120,7 +120,9 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
   (let ((log-obj (gensym))
         (log-type (intern (format "elog-%s-object" type)))
         (log-func (intern (format "%s-log" ident)))
-        (log-close-func (intern (format "%s-close-log" ident))))
+        (log-close-func (intern (format "%s-close-log" ident)))
+        (log-set-serverity-func (intern (format "%s-set-log-serverity" ident)))
+        (log-get-serverity-func (intern (format "%s-log-serverity" ident))))
     `(progn
        (defconst ,log-obj (make-instance ',log-type ,@init-args))
        (defun ,log-func (serverity format-string &rest objects)
@@ -128,7 +130,13 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          (apply #'elog-log ,log-obj serverity ',ident format-string objects))
        (defun ,log-close-func ()
          "use this function to do cleanning job after the log job is done"
-         (elog-close-log ,log-obj)))))
+         (elog-close-log ,log-obj))
+       (defun ,log-set-serverity-func (new-serverity)
+         "use this function to change elog-object serverity"
+         (setf (oref ,log-obj :serverity) new-serverity))
+       (defun ,log-get-serverity-func ()
+         "use this function to get elog-object serverity"
+         (oref ,log-obj :serverity)))))
 
 ;; log for message
 (defclass elog-message-object (elog-object)

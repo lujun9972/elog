@@ -68,6 +68,14 @@ elog is a simple logging library for elisp. It is extended from [[https://github
 
    (IDENT-close-log)
 
+5. use `IDENT-set-log-serverity' function to change the logging serverity
+   
+   (IDENT-set-log-serverity NEW-SERVERITY)
+
+6. use `IDENT-log-serverity' function to get the current logging serverity
+   
+   (IDENT-log-serverity)
+
 ** Examples
 
 *** use message function to display log
@@ -95,9 +103,12 @@ elog is a simple logging library for elisp. It is extended from [[https://github
   (elog-open-log file "FILE" :file "/tmp/elog.log"
                              :modes 700
                              :max-size 10
-                             :old-dir "/tmp/elog/")
+                             :old-dir "/tmp/elog/"
+                             :compress-command "gzip %L")
+  (FILE-log-serverity)
+  (FILE-set-log-serverity elog-emerg)
 
-   (FILE-log elog-error "%s-%d" "hello" 123)
+   (FILE-log elog-error "%s-%d" "hello" 123) 
 #+END_SRC
 
 *** record log to syslog
