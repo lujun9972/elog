@@ -222,7 +222,8 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
           (shell-command compress-command))))
     ;; logging to the log file
     (let ((log-file-directory (file-name-directory file)))
-      (unless (file-exists-p log-file-directory)
+      (when (and log-file-directory
+                 (not (file-exists-p log-file-directory)))
         (make-directory log-file-directory t))
       (append-to-file msg nil file))
     ;; change the log file's modes
