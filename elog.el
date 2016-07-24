@@ -203,7 +203,7 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
   (let* ((msg (concat  (apply #'format format objects) "\n"))
          (file-or-symbol (oref log :file)) 
          (file (if (stringp file-or-symbol)
-                   file
+                   file-or-symbol
                  (funcall file-or-symbol)))
          (max-size (oref log :max-size))
          (file-size (or (nth 7 (file-attributes file))
