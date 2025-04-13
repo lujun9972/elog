@@ -1,4 +1,4 @@
-;;; elog.el --- logging library extended from logito
+;;; elog.el --- logging library extended from logito  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015  DarkSun
 
@@ -8,7 +8,7 @@
 ;; Package-Version: 20160724.2255
 ;; Package-X-Original-Version: 20151102.1255
 ;; Version: 0.1
-;; Package-Requires: ((eieio "1.3"))
+;; Package-Requires: ((emacs "23.2"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -74,10 +74,10 @@
                      :custom list
                      :initform nil)
    (postlog-functions :initarg :postlog-functions
-                     :documentation "functions that executed after logging done. The function should accept the only parameter:this elog-object self"
-                     :type list
-                     :custom list
-                     :initform nil))
+                      :documentation "functions that executed after logging done. The function should accept the only parameter:this elog-object self"
+                      :type list
+                      :custom list
+                      :initform nil))
   "An interface to special elog-object"
   :abstract t)
 
@@ -177,25 +177,25 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
          :custom (or string symbol)
          :initform nil)
    (modes :initarg :modes
-         :documentation "specify the modes of log file."
-         :type (or null number)
-         :custom (or null number)
-         :initform nil)
+          :documentation "specify the modes of log file."
+          :type (or null number)
+          :custom (or null number)
+          :initform nil)
    (max-size :initarg :max-size
-         :documentation "specify max size(bytes) of single log file."
-         :type (or null number)
-         :custom (or null number)
-         :initform nil)
+             :documentation "specify max size(bytes) of single log file."
+             :type (or null number)
+             :custom (or null number)
+             :initform nil)
    (old-dir :initarg :old-dir
-         :documentation "specify which directory the old log file will be located."
-         :type (or null string)
-         :custom (or null string)
-         :initform nil)
+            :documentation "specify which directory the old log file will be located."
+            :type (or null string)
+            :custom (or null string)
+            :initform nil)
    (compress-command :initarg :compress-command
-         :documentation "specify how to compress the old log file. %L will be replaced by the old log file."
-         :type (or null string)
-         :custom (or null string)
-         :initform nil)))
+                     :documentation "specify how to compress the old log file. %L will be replaced by the old log file."
+                     :type (or null string)
+                     :custom (or null string)
+                     :initform nil)))
 
 (cl-defmethod elog-should-log-p ((log elog-file-object) serverity)
   (and (oref log :file)
@@ -203,7 +203,7 @@ It will create two functions: `IDENT-log' used to do the log stuff and `IDENT-cl
 
 (cl-defmethod elog-insert-log ((log elog-file-object) serverity format &rest objects)
   (let* ((msg (concat  (apply #'format format objects) "\n"))
-         (file-or-symbol (oref log :file)) 
+         (file-or-symbol (oref log :file))
          (file (if (stringp file-or-symbol)
                    file-or-symbol
                  (funcall file-or-symbol)))
